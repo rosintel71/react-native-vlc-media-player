@@ -68,6 +68,7 @@ class ReactVlcPlayerView extends TextureView implements
     private int preVolume = 100;
     private boolean autoAspectRatio = false;
     private boolean acceptInvalidCertificates = false;
+    private float mRateModifier = 1.0f;
 
     private float mProgressUpdateInterval = 0;
     private Handler mProgressUpdateHandler = new Handler();
@@ -126,6 +127,7 @@ class ReactVlcPlayerView extends TextureView implements
                 isPaused = false;
                 // this.getHolder().setKeepScreenOn(true);
                 mMediaPlayer.play();
+                applyRateModifier();
             }
         }
     }
@@ -471,11 +473,13 @@ class ReactVlcPlayerView extends TextureView implements
             if (isResume) {
                 if (autoplayResume) {
                     mMediaPlayer.play();
+                    applyRateModifier();
                 }
             } else {
                 if (autoplay) {
                     isPaused = false;
                     mMediaPlayer.play();
+                    applyRateModifier();
                 }
             }
             eventEmitter.loadStart();
@@ -547,9 +551,8 @@ class ReactVlcPlayerView extends TextureView implements
      * @param rateModifier
      */
     public void setRateModifier(float rateModifier) {
-        if (mMediaPlayer != null) {
-            mMediaPlayer.setRate(rateModifier);
-        }
+        mRateModifier = rateModifier;
+        applyRateModifier();
     }
 
     public void setmProgressUpdateInterval(float interval) {
@@ -600,6 +603,7 @@ class ReactVlcPlayerView extends TextureView implements
             } else {
                 isPaused = false;
                 mMediaPlayer.play();
+                applyRateModifier();
                 Log.i("do play:", true + "");
             }
         } else {
@@ -756,6 +760,12 @@ class ReactVlcPlayerView extends TextureView implements
             surfaceView.removeOnLayoutChangeListener(onLayoutChangeListener);
         }
         stopPlayback();
+    }
+
+    private void applyRateModifier() {
+        if (mMediaPlayer != null) {
+            mMediaPlayer.setRate(mRateModifier);
+        }
     }
 
     @Override

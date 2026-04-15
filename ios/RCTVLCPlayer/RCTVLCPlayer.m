@@ -34,12 +34,14 @@ static NSString *const playbackRate = @"rate";
     BOOL _paused;
     BOOL _autoplay;
     BOOL _acceptInvalidCertificates;
+    float _rate;
 }
 
 - (instancetype)initWithEventDispatcher:(RCTEventDispatcher *)eventDispatcher
 {
     if ((self = [super init])) {
         _eventDispatcher = eventDispatcher;
+        _rate = 1.0f;
 
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(applicationWillResignActive:)
@@ -72,6 +74,7 @@ static NSString *const playbackRate = @"rate";
 {
     if (_player) {
         [_player play];
+        [_player setRate:_rate];
         _paused = NO;
     }
 }
@@ -122,8 +125,10 @@ static NSString *const playbackRate = @"rate";
     self.dialogProvider.customRenderer = self;
     _player.media = [VLCMedia mediaWithURL:uri];
 
-    if (_autoplay)
+    if (_autoplay) {
         [_player play];
+        [_player setRate:_rate];
+    }
     
     [[AVAudioSession sharedInstance] setActive:NO withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
 }
@@ -360,7 +365,10 @@ static NSString *const playbackRate = @"rate";
 
 - (void)setRate:(float)rate
 {
-    [_player setRate:rate];
+    _rate = rate;
+    if (_player) {
+        [_player setRate:rate];
+    }
 }
 
 - (void)setAudioTrack:(int)track

@@ -171,7 +171,11 @@ export default class VLCPlayer extends Component {
     /* const {
      source
      } = this.props;*/
-    const source = resolveAssetSource(this.props.source) || {};
+    const resolvedSource = resolveAssetSource(this.props.source) || {};
+    const source = {
+      ...resolvedSource,
+      initOptions: [...(resolvedSource.initOptions || [])],
+    };
 
     let uri = source.uri || "";
     if (uri && uri.match(/^\//)) {
@@ -190,8 +194,6 @@ export default class VLCPlayer extends Component {
     }
     source.isNetwork = isNetwork;
     source.autoplay = this.props.autoplay;
-    source.initOptions = source.initOptions || [];
-
     if (this.props.repeat) { 
       const existingRepeat = source.initOptions.find(item => item.startsWith('--repeat') || item.startsWith('--input-repeat'));
       if (!existingRepeat) {
