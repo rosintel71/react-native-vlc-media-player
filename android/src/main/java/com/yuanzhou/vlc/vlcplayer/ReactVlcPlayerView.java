@@ -135,14 +135,18 @@ class ReactVlcPlayerView extends TextureView implements
 
     @Override
     public void onHostPause() {
-        if (!isPaused && mMediaPlayer != null) {
+        isHostPaused = true;
+        if (!isPaused && mMediaPlayer != null && libvlc != null) {
             isPaused = true;
-            isHostPaused = true;
-            mMediaPlayer.pause();
+            try {
+                mMediaPlayer.pause();
+                WritableMap map = Arguments.createMap();
+                map.putString("type", "Paused");
+                eventEmitter.onVideoStateChange(map);
+            } catch (IllegalStateException e) {
+                Log.w(TAG, "Ignoring pause on released VLC player", e);
+            }
             // this.getHolder().setKeepScreenOn(false);
-            WritableMap map = Arguments.createMap();
-            map.putString("type", "Paused");
-            eventEmitter.onVideoStateChange(map);
         }
         Log.i("onHostPause", "---------onHostPause------------>");
     }
@@ -492,16 +496,35 @@ class ReactVlcPlayerView extends TextureView implements
     }
 
     private void releasePlayer() {
-        if (libvlc == null)
+        if (libvlc == null || mMediaPlayer == null)
             return;
 
-        final IVLCVout vout = mMediaPlayer.getVLCVout();
-        vout.removeCallback(callback);
-        vout.detachViews();
-        //surfaceView.removeOnLayoutChangeListener(onLayoutChangeListener);
-        mMediaPlayer.release();
-        libvlc.release();
+        final MediaPlayer mediaPlayer = mMediaPlayer;
+        final LibVLC currentLibVlc = libvlc;
+        mMediaPlayer = null;
         libvlc = null;
+        isPaused = true;
+
+        try {
+            final IVLCVout vout = mediaPlayer.getVLCVout();
+            vout.removeCallback(callback);
+            vout.detachViews();
+        } catch (IllegalStateException e) {
+            Log.w(TAG, "Ignoring VLC vout detach on released player", e);
+        }
+
+        //surfaceView.removeOnLayoutChangeListener(onLayoutChangeListener);
+        try {
+            mediaPlayer.release();
+        } catch (IllegalStateException e) {
+            Log.w(TAG, "Ignoring media player release on released player", e);
+        }
+
+        try {
+            currentLibVlc.release();
+        } catch (IllegalStateException e) {
+            Log.w(TAG, "Ignoring libvlc release on released player", e);
+        }
 
         if(mProgressUpdateRunnable != null){
             mProgressUpdateHandler.removeCallbacks(mProgressUpdateRunnable);
